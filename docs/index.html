@@ -2,78 +2,70 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Availability calendar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Booking calendar</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bookings">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#d62828">
 <style>
   :root {
-    --bg: #f7f7f5;
-    --surface: #ffffff;
-    --text: #1d1f23;
-    --muted: #6b7077;
-    --line: #dcdde0;
-    --busy: #d62828;
-    --busy-text: #ffffff;
-    --today: #1d4ed8;
+    --bg: #f7f7f5; --surface: #ffffff; --text: #1d1f23; --muted: #6b7077;
+    --line: #dcdde0; --busy: #d62828; --busy-text: #ffffff; --today: #1d4ed8;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #15171a;
-      --surface: #1e2125;
-      --text: #ececee;
-      --muted: #9aa0a8;
-      --line: #33373d;
-      --busy: #e5484d;
-      --today: #6e9bff;
+    :root {
+      --bg: #15171a; --surface: #1e2125; --text: #ececee; --muted: #9aa0a8;
+      --line: #33373d; --busy: #e5484d; --today: #6e9bff;
     }
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0;
-    min-height: 100vh;
-    background: var(--bg);
-    color: var(--text);
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    display: flex;
-    justify-content: center;
-    padding: 24px 16px;
+    display: flex; justify-content: center;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));
   }
   main { width: 100%; max-width: 460px; }
   h1 { font-size: 1.25rem; margin: 0 0 4px; }
   p.hint { margin: 0 0 16px; color: var(--muted); font-size: .9rem; }
-  .bar {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 12px;
-  }
+  .bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .bar h2 { font-size: 1.1rem; margin: 0; }
   button {
     font: inherit; color: var(--text); background: var(--surface);
-    border: 1px solid var(--line); border-radius: 8px;
-    padding: 8px 12px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer;
   }
   button:hover { border-color: var(--muted); }
-  button:focus-visible, .day:focus-visible { outline: 2px solid var(--today); outline-offset: 2px; }
-  .grid {
-    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
-  }
-  .dow {
-    text-align: center; font-size: .8rem; color: var(--muted); padding: 4px 0;
-  }
+  button:focus-visible { outline: 2px solid var(--today); outline-offset: 2px; }
+  .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .dow { text-align: center; font-size: .8rem; color: var(--muted); padding: 4px 0; }
   .day {
-    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
-    font: inherit; color: var(--text); padding: 0;
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center; padding: 0;
   }
   .day.pad { visibility: hidden; border: 0; }
   .day.today { border-color: var(--today); border-width: 2px; font-weight: 700; }
   .day.busy { background: var(--busy); border-color: var(--busy); color: var(--busy-text); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
   .count { margin-top: 12px; color: var(--muted); font-size: .9rem; }
+  .msg { margin-top: 12px; font-size: .9rem; min-height: 1.2em; }
+  input[type=file] { display: none; }
+  .install {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 16px; font-size: .9rem;
+  }
+  .install[hidden] { display: none; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Availability calendar</h1>
-  <p class="hint">Click a date to mark it occupied. Click again to clear it.</p>
+  <h1>Booking calendar</h1>
+  <div class="install" id="install" hidden>
+    To keep your dates safe, add this page to your Home Screen: tap the Share button in Safari, then "Add to Home Screen". Then open it from the new icon.
+  </div>
+  <p class="hint">Click a date to mark it occupied. Click again to clear it. Changes save automatically.</p>
 
   <div class="bar">
     <button id="prev" aria-label="Previous month">&lsaquo; Prev</button>
@@ -88,6 +80,12 @@
     <button id="today">Go to today</button>
     <button id="clear">Clear this month</button>
   </div>
+  <div class="actions">
+    <button id="backup">Backup to file</button>
+    <button id="restore">Restore from file</button>
+    <input type="file" id="file" accept="application/json,.json">
+  </div>
+  <div class="msg" id="msg" role="status"></div>
 </main>
 
 <script>
@@ -95,81 +93,105 @@
   const pad = n => String(n).padStart(2, "0");
   const iso = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
 
-  // Load saved dates (localStorage can be unavailable, so guard it)
   let occupied = new Set();
-  try {
-    occupied = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
-  } catch (e) {}
+  try { occupied = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
+
+  // Ask the browser not to delete this data when it is short on space
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify([...occupied])); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify([...occupied])); }
+    catch (e) { say("Could not save in this browser. Use Backup to file."); }
   }
 
-  const now = new Date();
-  let year = now.getFullYear();
-  let month = now.getMonth();
+  const msg = document.getElementById("msg");
+  function say(t) { msg.textContent = t; }
 
+  const now = new Date();
+  let year = now.getFullYear(), month = now.getMonth();
   const grid = document.getElementById("grid");
-  const title = document.getElementById("title");
-  const count = document.getElementById("count");
 
   function render() {
     grid.innerHTML = "";
-    title.textContent = new Date(year, month, 1)
-      .toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    document.getElementById("title").textContent =
+      new Date(year, month, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
-    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(d => {
+    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d => {
       const el = document.createElement("div");
-      el.className = "dow";
-      el.textContent = d;
-      grid.appendChild(el);
+      el.className = "dow"; el.textContent = d; grid.appendChild(el);
     });
 
     const first = new Date(year, month, 1).getDay();
     const days = new Date(year, month + 1, 0).getDate();
-
     for (let i = 0; i < first; i++) {
-      const p = document.createElement("div");
-      p.className = "day pad";
-      grid.appendChild(p);
+      const p = document.createElement("div"); p.className = "day pad"; grid.appendChild(p);
     }
 
+    const todayKey = iso(now.getFullYear(), now.getMonth(), now.getDate());
     let busyCount = 0;
     for (let d = 1; d <= days; d++) {
       const key = iso(year, month, d);
       const btn = document.createElement("button");
-      btn.className = "day";
-      btn.textContent = d;
+      btn.className = "day"; btn.textContent = d;
       const isBusy = occupied.has(key);
       if (isBusy) { btn.classList.add("busy"); busyCount++; }
-      if (key === iso(now.getFullYear(), now.getMonth(), now.getDate())) btn.classList.add("today");
+      if (key === todayKey) btn.classList.add("today");
       btn.setAttribute("aria-pressed", isBusy);
       btn.setAttribute("aria-label", `${key}${isBusy ? ", occupied" : ""}`);
-      btn.addEventListener("click", () => {
+      btn.onclick = () => {
         occupied.has(key) ? occupied.delete(key) : occupied.add(key);
-        save();
-        render();
-      });
+        save(); render();
+      };
       grid.appendChild(btn);
     }
-    count.textContent = `${busyCount} occupied ${busyCount === 1 ? "date" : "dates"} this month`;
+    document.getElementById("count").textContent =
+      `${busyCount} occupied ${busyCount === 1 ? "date" : "dates"} this month`;
   }
 
-  document.getElementById("prev").onclick = () => {
-    month--; if (month < 0) { month = 11; year--; } render();
-  };
-  document.getElementById("next").onclick = () => {
-    month++; if (month > 11) { month = 0; year++; } render();
-  };
-  document.getElementById("today").onclick = () => {
-    year = now.getFullYear(); month = now.getMonth(); render();
-  };
+  document.getElementById("prev").onclick = () => { month--; if (month < 0) { month = 11; year--; } render(); };
+  document.getElementById("next").onclick = () => { month++; if (month > 11) { month = 0; year++; } render(); };
+  document.getElementById("today").onclick = () => { year = now.getFullYear(); month = now.getMonth(); render(); };
   document.getElementById("clear").onclick = () => {
+    if (!confirm("Clear all occupied dates in this month?")) return;
     const prefix = `${year}-${pad(month + 1)}-`;
     [...occupied].filter(k => k.startsWith(prefix)).forEach(k => occupied.delete(k));
-    save();
-    render();
+    save(); render();
   };
+
+  // Backup: download the dates as a small file he can keep or email to himself
+  document.getElementById("backup").onclick = () => {
+    const json = JSON.stringify({ occupied: [...occupied].sort() }, null, 2);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    a.download = "booking-calendar-backup.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    say("Backup downloaded.");
+  };
+
+  // Restore: load dates back from a backup file
+  const file = document.getElementById("file");
+  document.getElementById("restore").onclick = () => file.click();
+  file.onchange = async () => {
+    const f = file.files[0];
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (!Array.isArray(data.occupied)) throw new Error("bad file");
+      occupied = new Set(data.occupied.filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)));
+      save(); render();
+      say("Dates restored.");
+    } catch (e) {
+      say("That file is not a valid backup.");
+    }
+    file.value = "";
+  };
+
+  // Show the Home Screen tip only on iPhone/iPad Safari when not yet installed
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = window.navigator.standalone === true ||
+    (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  if (isIOS && !standalone) document.getElementById("install").hidden = false;
 
   render();
 </script>
